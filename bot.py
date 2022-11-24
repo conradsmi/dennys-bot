@@ -1,97 +1,69 @@
-from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
-
+import json
 import requests
 import time
 
-def getQuery():
-    print("Welcome to the shop bot!")
-    print("Opening Chrome browser to Kith.com")
-    print("What is the exact item name you would like to buy?")
-    print("replace spaces between words with - ")
-    # Get search input
-    item = input("Search for: ")
-    automate(item)
-
-def automate(item):
-    
-    # Get response code - Should return 200
-    url = driver.current_url
-    resp = requests.get(url, timeout = 4)
-    driver.get('https://shop.havenshop.com/products/' + item)
-    resp2 = requests.get(url, timeout = 4)
-    if (resp2 == 404):
-        print("The item you are looking for does not exist, please try again")
-        break
-    else:
-        itemPage()
-
-def itemPage():
-    # Land on product page
-    select_box = driver.find_element_by_id("product-select")
-    options = [x for x in select_box.find_elements_by_tag_name("option")]
-    
-    # Size select
-    for element in options:
-        print (element.text + "   id:    " + element.get_attribute("value") + "\n")
-    print("Available size list")
-    size = input("Enter the ID of your size to purchase: ")
-    
-    # Select Size and purchase
-    select_box.click()
-    driver.find_element_by_id("variant-" + size).click()
-    
-    # Confirm Purchase
-    print("Buy? This action will complete checkout and confirm purchase")
-    confirm = input('Y for Yes | N for No: ')
-    if (confirm == "Y"):
-        print("Adding to bag and going to checkout")
-        driver.find_element_by_id("AddToCart").click()
-        # Delay checkout for load
-        time.sleep(1)
-        checkout()
-    elif(confirm == "N"):
-        print("Thank you for using Kith Bot")
-    else:
-        print("Please enter Y or N")
-
-def checkout():
-    print("proceeding to checkout")
-    driver.get("https://shop.havenshop.com/cart")
-    driver.find_element_by_name("checkout").click()
-    # Order 
-    time.sleep(1)
-    order()
-
-def order():
-    driver.find_element_by_id("checkout_email").send_keys(keys['email'])
-    driver.find_element_by_id("checkout_shipping_address_first_name").send_keys(keys['first_name'])
-    driver.find_element_by_id("checkout_shipping_address_last_name").send_keys(keys['last_name'])
-    driver.find_element_by_id("checkout_shipping_address_address1").send_keys(keys['address'])
-    driver.find_element_by_id("checkout_shipping_address_city").send_keys(keys['city'])
-    driver.find_element_by_id("checkout_shipping_address_zip").send_keys(keys['postal_code'])
-    driver.find_element_by_id("checkout_shipping_address_phone").send_keys(keys['phone'])
-    print("Please click the recaptcha button on checkout")
-    bot_check = input("Type Y once clicked: ")
-    if (bot_check == "Y"):
-        driver.find_element_by_class_name("step_footer_continue-btn btn").click()
-    time.sleep(1)
-    driver.find_element_by_class_name("step_footer_continue-btn btn").click()
-    paymenr()
-
-def payment():
-    driver.find_element_by_id("number").send_keys(keys['card_number'])
-    driver.find_element_by_id("name").send_keys(keys['card_name'])
-    driver.find_element_by_id("expiry").send_keys(keys['card_expiry'])
-    driver.find_element_by_id("verification_value").send_keys(keys['card_cvv'])
-    print("Completing Order")
-    driver.find_element_by_class_name("shown-if-js").click()
-
-
-
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import Select
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support.expected_conditions import element_to_be_clickable, url_contains
 
 if __name__ == '__main__':
-    # Load chrome
-    driver = webdriver.Chrome('./chromedriver/chromedriver')
-    driver.get("https://shop.havenshop.com/")
-    getQuery()
+    # Load firefox and product page
+    driver = webdriver.Firefox()
+    with open('keys.json') as f:
+        keys = json.load(f)
+    print("Opening Firefox...")
+    driver.get(keys['url'])
+
+    # Select size
+    select_box = driver.find_element(By.CSS_SELECTOR, "[name='options[Size]'")
+    select = Select(select_box)
+    select.select_by_value(keys['size'])
+
+    # Add to cart and go to checkout
+    driver.find_element(By.CSS_SELECTOR, "[name='add']").click()
+    WebDriverWait(driver, 10).until(element_to_be_clickable((By.CSS_SELECTOR, "[action='/cart']"))).click()
+    # driver.find_element(By.CSS_SELECTOR, "[action='/cart']").click()
+
+    # Insert shipping information and move to billing
+    WebDriverWait(driver, 7200).until(url_contains('information'))
+    driver.find_element(By.CSS_SELECTOR, "[name='email']").send_keys(keys['ship_email'])
+    driver.find_element(By.CSS_SELECTOR, "[name='firstName']").send_keys(keys['ship_firstName'])
+    driver.find_element(By.CSS_SELECTOR, "[name='lastName']").send_keys(keys['ship_lastName'])
+    driver.find_element(By.CSS_SELECTOR, "[name='address1']").send_keys(keys['ship_address1'])
+    driver.find_element(By.CSS_SELECTOR, "[name='address2']").send_keys(keys['ship_address2'])
+    driver.find_element(By.CSS_SELECTOR, "[name='city']").send_keys(keys['ship_city'])
+    driver.find_element(By.CSS_SELECTOR, "[name='zone']").send_keys(keys['ship_state'])
+    driver.find_element(By.CSS_SELECTOR, "[name='postalCode']").send_keys(keys['ship_zip'])
+
+    driver.find_element(By.CSS_SELECTOR, "[type='submit']").click()
+
+    WebDriverWait(driver, 10).until(url_contains('shipping'))
+    driver.find_element(By.CSS_SELECTOR, "[type='submit']").click()
+
+    # Insert billing information
+    WebDriverWait(driver, 10).until(url_contains('payment'))
+    driver.find_element(By.CSS_SELECTOR, "[for='billing_address_selector-custom_billing_address']").click()
+    driver.find_element(By.CSS_SELECTOR, "[name='firstName']").send_keys(keys['bill_firstName'])
+    driver.find_element(By.CSS_SELECTOR, "[name='lastName']").send_keys(keys['bill_lastName'])
+    driver.find_element(By.CSS_SELECTOR, "[name='address1']").send_keys(keys['bill_address1'])
+    driver.find_element(By.CSS_SELECTOR, "[name='address2']").send_keys(keys['bill_address2'])
+    driver.find_element(By.CSS_SELECTOR, "[name='city']").send_keys(keys['bill_city'])
+    driver.find_element(By.CSS_SELECTOR, "[name='zone']").send_keys(keys['bill_state'])
+    driver.find_element(By.CSS_SELECTOR, "[name='postalCode']").send_keys(keys['bill_zip'])
+
+    # Insert card information
+    time.sleep(3)
+    driver.find_element(By.ID, "number").send_keys(keys['card_number'])
+    driver.find_element(By.ID, "name").send_keys(keys['card_name'])
+    driver.find_element(By.ID, "expiry").send_keys(keys['card_expiry'])
+    driver.find_element(By.ID, "verification_value").send_keys(keys['card_cvv'])
+
+    exit()
+
+    # Complete order
+    print("Executing order...")
+    driver.find_element(By.CSS_SELECTOR, "[type='submit']").click()
+    print("Ordered!")

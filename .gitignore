@@ -1,4 +1,6 @@
 bin/
 include/
 lib/
+*.json
+*.log
 pyvenv.cfg
