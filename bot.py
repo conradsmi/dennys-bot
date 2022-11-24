@@ -16,6 +16,10 @@ if __name__ == '__main__':
         keys = json.load(f)
     print("Opening Firefox...")
     driver.get(keys['url'])
+    while driver.find_element(By.CSS_SELECTOR, "[name='add']").get_attribute("disabled"):
+        print('Still disabled, refreshing...')
+        driver.refresh()
+        time.sleep(0.5)
 
     # Select size
     select_box = driver.find_element(By.CSS_SELECTOR, "[name='options[Size]'")
@@ -28,8 +32,7 @@ if __name__ == '__main__':
     # driver.find_element(By.CSS_SELECTOR, "[action='/cart']").click()
 
     # Insert shipping information and move to billing
-    WebDriverWait(driver, 7200).until(url_contains('information'))
-    driver.find_element(By.CSS_SELECTOR, "[name='email']").send_keys(keys['ship_email'])
+    WebDriverWait(driver, 7200).until(element_to_be_clickable((By.CSS_SELECTOR, "[name='email']"))).send_keys(keys['ship_email'])
     driver.find_element(By.CSS_SELECTOR, "[name='firstName']").send_keys(keys['ship_firstName'])
     driver.find_element(By.CSS_SELECTOR, "[name='lastName']").send_keys(keys['ship_lastName'])
     driver.find_element(By.CSS_SELECTOR, "[name='address1']").send_keys(keys['ship_address1'])
@@ -55,11 +58,12 @@ if __name__ == '__main__':
     driver.find_element(By.CSS_SELECTOR, "[name='postalCode']").send_keys(keys['bill_zip'])
 
     # Insert card information
-    time.sleep(3)
-    driver.find_element(By.ID, "number").send_keys(keys['card_number'])
-    driver.find_element(By.ID, "name").send_keys(keys['card_name'])
-    driver.find_element(By.ID, "expiry").send_keys(keys['card_expiry'])
-    driver.find_element(By.ID, "verification_value").send_keys(keys['card_cvv'])
+    time.sleep(2)
+    # driver.find_element(By.ID, "number").click()
+    # driver.send_keys(keys['card_number'])
+    # driver.find_element(By.ID, "name").send_keys(keys['card_name'])
+    # driver.find_element(By.ID, "expiry").send_keys(keys['card_expiry'])
+    # driver.find_element(By.ID, "verification_value").send_keys(keys['card_cvv'])
 
     exit()
 
